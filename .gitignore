@@ -1,0 +1,4 @@
+.vscode/
+src/ORB_SLAM3/Vocabulary/ORBvoc.txt
+build/
+devel/
