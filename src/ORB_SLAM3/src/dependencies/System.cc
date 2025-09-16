@@ -1612,32 +1612,33 @@ void System::SaveFrame(int circle)
 {
     if(circle==1)
     {
-        if(!mpTracker->mState==Tracking::LOST)
+        // if(!mpTracker->mState==Tracking::LOST)
+        // {
+        for(map<std::string,std::map<MapPoint*,Coordinate>>::const_iterator it=mpTracker->frameStorage.begin(),end=mpTracker->frameStorage.end();it!=end;++it)
         {
-            for(map<std::string,std::map<MapPoint*,Coordinate>>::const_iterator it=mpTracker->frameStorage.begin(),end=mpTracker->frameStorage.end();it!=end;++it)
+            string filename=it->first; ///decide before save? save differently for loops?  第一次lost不存，第二次无论如何都存； 第二次存时若第一次存了则不再存
+            saved.insert(filename);
+            
+            int pos=filename.rfind("jpg");
+            filename.replace(pos,3,"txt");
+            pos=filename.rfind("frames");
+            filename.replace(pos,6,"slamlogs");
+            ofstream f(filename);
+            // f.open(filename);
+            for(map<MapPoint*,Coordinate>::const_iterator nit=it->second.begin(),nend=it->second.end();nit!=nend;++nit)
             {
-                string filename=it->first; ///decide before save? save differently for loops?  第一次lost不存，第二次无论如何都存； 第二次存时若第一次存了则不再存
-                saved.insert(filename);
-                ofstream f(filename);
-                int pos=filename.rfind("jpg");
-                filename.replace(pos,3,"txt");
-                pos=filename.rfind("frames");
-                filename.replace(pos,6,"slamlogs");
-                // f.open(filename);
-                for(map<MapPoint*,Coordinate>::const_iterator nit=it->second.begin(),nend=it->second.end();nit!=nend;++nit)
+                MapPoint *currentmp=nit->first;
+                MapPoint *nextmp=nit->first->GetReplaced();
+                while(nextmp)
                 {
-                    MapPoint *currentmp=nit->first;
-                    MapPoint *nextmp=nit->first->GetReplaced();
-                    while(nextmp)
-                    {
-                        currentmp=nextmp;
-                        nextmp=currentmp->GetReplaced();
-                    }
-                    f<<currentmp->GetWorldPos().transpose()<<' '<<nit->second.x<<' '<<nit->second.y<<endl;
+                    currentmp=nextmp;
+                    nextmp=currentmp->GetReplaced();
                 }
-                f.close();
+                f<<currentmp->GetWorldPos().transpose()<<' '<<nit->second.x<<' '<<nit->second.y<<endl;
             }
+            f.close();
         }
+        // }
     }
     else if(circle==2)
     {
@@ -1647,11 +1648,12 @@ void System::SaveFrame(int circle)
             if(saved.find(filename)!=saved.end())
             {
                 // saved.insert(filename);
-                ofstream f(filename);
+                
                 int pos=filename.rfind("jpg");
                 filename.replace(pos,3,"txt");
                 pos=filename.rfind("frames");
                 filename.replace(pos,6,"slamlogs");
+                ofstream f(filename);
                 // f.open(filename);
                 for(map<MapPoint*,Coordinate>::const_iterator nit=it->second.begin(),nend=it->second.end();nit!=nend;++nit)
                 {

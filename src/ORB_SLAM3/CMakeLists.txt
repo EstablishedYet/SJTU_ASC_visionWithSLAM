@@ -423,3 +423,17 @@ target_link_libraries(summer2025
 ${PROJECT_NAME}
 ${catkin_LIBRARIES}
 )
+
+add_executable(slamTest_sky
+        src/main/slamTest_sky.cc)
+target_link_libraries(slamTest_sky
+${PROJECT_NAME}
+${catkin_LIBRARIES}
+)
+
+add_executable(slamTest_earth
+        src/main/slamTest_earth.cc)
+target_link_libraries(slamTest_earth
+${PROJECT_NAME}
+${catkin_LIBRARIES}
+)

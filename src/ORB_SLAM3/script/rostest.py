@@ -29,7 +29,6 @@ result_pub = rospy.Publisher("final_result", String, queue_size = 1,latch=True)
 target_pub = rospy.Publisher("final_pos",PoseStamped, queue_size = 1,latch=True)
 permission_pub=rospy.Publisher("permission",Float64,queue_size=1)
 
-
 rospy.Subscriber("init_result",PoseStamped, init_result_sub, queue_size = 1)
 
 wp=0

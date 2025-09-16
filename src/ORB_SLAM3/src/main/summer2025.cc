@@ -8,6 +8,7 @@
 #include<chrono>
 #include<System.h>
 #include<ImuTypes.h>
+#include<string>
 
 #include<opencv2/opencv.hpp>
 #include<Eigen/Dense>
@@ -119,12 +120,13 @@ int main(int argc,char **argv)
 {
     /// ./summer2025 path/to/voc path/to/setting wayPointStartToTrackForBombing
     string bombPoint=argv[3];
-    int l=bombPoint.length();
-    int bombPoint_int=0;
-    for(int i=0;i<l;++i)
-    {
-        bombPoint_int+=(bombPoint[0]-'0')*pow(10,l-1-i);
-    }
+    // int l=bombPoint.length();
+    // int bombPoint_int=0;
+    // for(int i=0;i<l;++i)
+    // {
+    //     bombPoint_int+=(bombPoint[0]-'0')*pow(10,l-1-i);
+    // }
+    int bombPoint_int=stoi(bombPoint);
     ros::init(argc, argv, "slam");
     ros::NodeHandle nh;
     ros::Rate rate1(30);
@@ -168,7 +170,7 @@ int main(int argc,char **argv)
             {
                 t0=curTime;
             }
-            SLAM.TrackMonocular(cv::imread(curName,cv::IMREAD_UNCHANGED),curTime,vector<ORB_SLAM3::IMU::Point>(),curName,true);
+            SLAM.TrackMonocular(cv::imread(curName,cv::IMREAD_GRAYSCALE),curTime,vector<ORB_SLAM3::IMU::Point>(),curName,true);
             if(SLAM.GetTrackingState()==1&&curTime-t0>=3)
             {
                 SLAM.ResetActiveMap();
@@ -253,11 +255,11 @@ int main(int argc,char **argv)
                 }
                 if(!relocalized)
                 {
-                    SLAM.RelocalizeMonocular(cv::imread(curName,cv::IMREAD_UNCHANGED),curTime,curName,relocalized);
+                    SLAM.RelocalizeMonocular(cv::imread(curName,cv::IMREAD_GRAYSCALE),curTime,curName,relocalized);
                 }
                 else
                 {
-                    SLAM.TrackMonocular(cv::imread(curName,cv::IMREAD_UNCHANGED),curTime,vector<ORB_SLAM3::IMU::Point>(),curName,true);
+                    SLAM.TrackMonocular(cv::imread(curName,cv::IMREAD_GRAYSCALE),curTime,vector<ORB_SLAM3::IMU::Point>(),curName,true);
                     ///即使recentlylost也不中断，因为可能可以根据第一轮relocalize回来，同时修改了save逻辑，recentlylost不再保存
                     ///recentlylost 确无保存必要，因为点太少
                 }
@@ -301,7 +303,7 @@ int main(int argc,char **argv)
                     {
                         t0=curTime;
                     }
-                    SLAM.TrackMonocular(cv::imread(curName,cv::IMREAD_UNCHANGED),curTime,vector<ORB_SLAM3::IMU::Point>(),curName,true);
+                    SLAM.TrackMonocular(cv::imread(curName,cv::IMREAD_GRAYSCALE),curTime,vector<ORB_SLAM3::IMU::Point>(),curName,true);
                     if(SLAM.GetTrackingState()==1&&curTime-t0>=5)
                     {
                         abandon=0;
@@ -351,11 +353,11 @@ int main(int argc,char **argv)
                     }
                     if(!relocalized)
                     {
-                        SLAM.RelocalizeMonocular(cv::imread(curName,cv::IMREAD_UNCHANGED),curTime,curName,relocalized);
+                        SLAM.RelocalizeMonocular(cv::imread(curName,cv::IMREAD_GRAYSCALE),curTime,curName,relocalized);
                     }
                     else
                     {
-                        SLAM.TrackMonocular(cv::imread(curName,cv::IMREAD_UNCHANGED),curTime,vector<ORB_SLAM3::IMU::Point>(),curName,true);
+                        SLAM.TrackMonocular(cv::imread(curName,cv::IMREAD_GRAYSCALE),curTime,vector<ORB_SLAM3::IMU::Point>(),curName,true);
                     }
                 }
                 {
@@ -392,7 +394,7 @@ int main(int argc,char **argv)
     referenceMode_pub.publish(referenceMode);
     //根据abandon进行数据挑选和计算
     float x=0,y=0,z=0;
-    while(true)
+    while(true&&abandon!=0)
     {
         {
             unique_lock<mutex> lock(slamTarget_mtx);
@@ -402,13 +404,13 @@ int main(int argc,char **argv)
         }
         if(x!=0||y!=0||z!=0)
         {
+            if(x==-1&&y==-1&&z==-1)
+            {
+                abandon=0;
+            }
             break;
         }
         rate1.sleep();
-    }
-    if(x==-1&&y==-1&&z==-1)
-    {
-        abandon=0;
     }
     if(abandon!=0)//may can consider give the use of camera to this prog since then
     {///todo get the camera, get picture and calculate, use the data get, and change the control logic using waypoint
@@ -454,11 +456,16 @@ int main(int argc,char **argv)
             }
             if(curWayPoint>=bombPoint_int)
             {
+                {
+                    unique_lock<mutex> lock(globalPosition_mtx);
+                    x=global_x;
+                    y=global_y;
+                    z=global_z;
+                    yaw=global_yaw;
+                }
                 cap>>frame;
-                x=global_x;
-                y=global_y;
-                z=global_z;
-                yaw=global_yaw;
+                cv::cvtColor(frame,frame,cv::COLOR_BGR2GRAY);
+                
                 // auto now = std::chrono::high_resolution_clock::now();
                 // auto ns = std::chrono::time_point_cast<std::chrono::nanoseconds>(now);
                 // auto epoch = ns.time_since_epoch();  
@@ -504,6 +511,7 @@ int main(int argc,char **argv)
         }
     }
     ///shutdown etc...
+    spinner.stop();
     SLAM.Shutdown();
     return 0;
 }

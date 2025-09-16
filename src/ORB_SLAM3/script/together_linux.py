@@ -1,3 +1,4 @@
+#this version only support numOfCicle 2
 import math
 import time
 from collections import Counter
@@ -15,7 +16,7 @@ from std_msgs.msg import Int32
 from mavros_msgs.msg import WaypointReached
 from sensor_msgs.msg import NavSatStatus
 from geometry_msgs.msg import Point
-from package__.msg import picnameAndTime
+from picname_and_time_msgs.msg import picnameAndTime
 import tf
 import datetime
 import os
@@ -26,7 +27,7 @@ import multiprocessing
 import sys
 import subprocess
 import shutil
-import serial
+# import serial
 
 # def getHSV(h,s,v):
 #     return np.array([int(h/2),int(s/100*255),int(v/100*255)])
@@ -77,33 +78,33 @@ import serial
 
 
 def main():
-    def cameraAdjust():
-        SERIAL_PORT = "/dev/ttyUSB0"   # 如果是 COM10 以上要写成 r"\\.\COM10"
-        BAUD_RATE = 115200
+    # def cameraAdjust():
+    #     SERIAL_PORT = "/dev/ttyUSB0"   # 如果是 COM10 以上要写成 r"\\.\COM10"
+    #     BAUD_RATE = 115200
 
-        # 打开串口
-        ser = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=1)
+    #     # 打开串口
+    #     ser = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=1)
 
-        # 要发送的数据
-        send_buf = bytearray([0x55, 0x66, 0x01, 0x04, 0x00, 0x00, 0x00, 
-                            0x0E, 0x00, 0x00, 0x7C, 0xFC, 0x4F, 0xA4])
+    #     # 要发送的数据
+    #     send_buf = bytearray([0x55, 0x66, 0x01, 0x04, 0x00, 0x00, 0x00, 
+    #                         0x0E, 0x00, 0x00, 0x7C, 0xFC, 0x4F, 0xA4])
 
-        print("Sending:", send_buf.hex())
-        ser.write(send_buf)
-        ser.flush()
+    #     print("Sending:", send_buf.hex())
+    #     ser.write(send_buf)
+    #     ser.flush()
 
-        # 等待响应
-        time.sleep(0.5)
-        response = ser.read(ser.in_waiting or 1)
+    #     # 等待响应
+    #     time.sleep(0.5)
+    #     response = ser.read(ser.in_waiting or 1)
 
-        if response:
-            print("Received:", response.hex())
-        else:
-            print("No response received.")
+    #     if response:
+    #         print("Received:", response.hex())
+    #     else:
+    #         print("No response received.")
 
-        ser.close()
+    #     ser.close()
 
-    cameraAdjust()
+    # cameraAdjust()
 
     parser=argparse.ArgumentParser()
     parser.add_argument('--mode',type=str)
@@ -114,10 +115,10 @@ def main():
     parser.add_argument('--c2start',type=int,default=13)
     parser.add_argument('--c2end',type=int,default=14)
     parser.add_argument('--numOfFrame',type=int,default=18)
-    parser.add_argument('--numOfCircle',type=int,default=2)
+    # parser.add_argument('--numOfCircle',type=int,default=2)
     parser.add_argument('--numOfProcs',type=int,default=6)
-    parser.add_argument('--camera',type=str)
-    parser.add_argument('--expo',type=int,default=100)
+    parser.add_argument('--checkpoint',type=int,default=3)
+    # parser.add_argument('--expo',type=int,default=100)
     arg=parser.parse_args()
     
     mode=arg.mode
@@ -129,11 +130,12 @@ def main():
     c2end=arg.c2end
     numOfFrame=arg.numOfFrame
     numOfProcs=arg.numOfProcs
-    numOfCircle=arg.numOfCircle
-    cameraType=arg.camera
-    expo=arg.expo
-    if numOfCircle==1:
-        c2end=c2start=-1
+    # numOfCircle=arg.numOfCircle
+    checkpoint=arg.checkpoint
+    # cameraType=arg.camera
+    # expo=arg.expo
+    # if numOfCircle==1:
+    #     c2end=c2start=-1
 
     modelclassify_number=r"/home/amov/sjtu_asc_v2_ws-main/src/mission_offboard/script/models/902detect.pt"
     modelclassify_pattern=r"/home/amov/sjtu_asc_v2_ws-main/src/mission_offboard/script/models/902classify.pt"
@@ -143,7 +145,7 @@ def main():
 
     conf_thresh=0.7
 
-    circle_number=2-numOfCircle
+    circle_number=0
 
     local_x = 0
     local_y = 0
@@ -168,25 +170,22 @@ def main():
     maxdet = 3
     max_num = 3
 
-    fw=1920
-    fh=1080
+    fw=2560
+    fh=1440
     # expo=1
-    mtx_siyi = np.array([[1075.5,0.00000000e+00,997.3],
-                [0.00000000e+00,1079.4,566],
-                [0.00000000e+00,0.00000000e+00,1.00000000e+00]],dtype=np.float64)
-    dist_siyi = np.array([[-0.077,0.0624,0,0,0]])
-    mtx_self1=np.array([[2820.3,0.00000000e+00,1267],
-                [0.00000000e+00,2837.5,612],
-                [0.00000000e+00,0.00000000e+00,1.00000000e+00]],dtype=np.float64)
-    dist_self1=np.array([[-0.52,0.7131,-0.0064,-0.00123,-1.333]])
-    if cameraType=='siyi':
-        mtx=mtx_siyi
-        dist=dist_siyi
-    elif cameraType=='self1':
-        mtx=mtx_self1
-        dist=dist_self1
-    nmtx, _ = cv2.getOptimalNewCameraMatrix(mtx, dist, (fw,fh), alpha=1)
+    mtx = np.array([[2.8724e+03,0.00000000e+00,1.2342e+03],
+    [0.00000000e+00,2.8657e+03,6.891308e+02],
+    [0.00000000e+00,0.00000000e+00,1.00000000e+00]])
 
+    dist= np.array([-0.5018,0.2920,-0.0034,0.0010,-0.2113])
+    # if cameraType=='siyi':
+    #     mtx=mtx_siyi
+    #     dist=dist_siyi
+    # elif cameraType=='self1':
+    #     mtx=mtx_self1
+    #     dist=dist_self1
+    nmtx, _ = cv2.getOptimalNewCameraMatrix(mtx, dist, (fw,fh), alpha=1)
+    exposures=[1,4,8,15,30,50,90]
     if mode=="number":
         MODELCLASSIFY = modelclassify_number
     elif mode=="pattern":
@@ -394,29 +393,76 @@ def main():
     rospy.Subscriber("/mavros/local_position/odom",Odometry,odom_cb,queue_size=1)
     # frameid=0
     # framestart=0
-    cameraAdjust()
+    # cameraAdjust()
     id=0
     while id<=30:
         cap = cv2.VideoCapture(id)
         if not cap.isOpened():
             id+=1
         else:
-            if(cameraType!='siyi'):
-                subprocess.run(["v4l2-ctl", f"--device=/dev/video{id}", "--set-ctrl", "exposure_auto=1"])
-                subprocess.run(["v4l2-ctl", f"--device=/dev/video{id}", "--set-ctrl", f"exposure_absolute={expo}"])
+            cap.set(cv2.CAP_PROP_FOURCC,cv2.VideoWriter_fourcc(*'MJPG'))
+            cap.set(cv2.CAP_PROP_FPS, 30)
+            cap.set(cv2.CAP_PROP_FRAME_WIDTH, fw)
+            cap.set(cv2.CAP_PROP_FRAME_HEIGHT, fh)
+            cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+            expo_id=2
+            # if(cameraType!='siyi'):
+            subprocess.run(["v4l2-ctl", f"--device=/dev/video{id}", "--set-ctrl", "exposure_auto=1"])
+            subprocess.run(["v4l2-ctl", f"--device=/dev/video{id}", "--set-ctrl", f"exposure_absolute={exposures[expo_id]}"])
             break
-    cap.set(cv2.CAP_PROP_FOURCC,cv2.VideoWriter_fourcc(*'MJPG'))
-    cap.set(cv2.CAP_PROP_FPS, 30)
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, fw)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, fh)
-    cap.set(cv2.CAP_PROP_BUFFERSIZE, 8)
-
+    lastframe_sum=0
     fps=15
     # alldataLists=[]
     # mapofclears=[]
     while True:
+        if wp>=checkpoint:
+            cap.read()
+            cap.read()
+            _,testframe=cap.read()
+            # cv2.imwrite(os.path.join(path,f"{expo}.jpg"),testframe)
+            testframe=cv2.cvtColor(testframe,cv2.COLOR_BGR2GRAY)
+            lastframe_sum=testframe_sum=np.sum(testframe)/(testframe.shape[0]*testframe.shape[1])
+            if testframe_sum>=125:
+                while expo_id>0:
+                    expo_id-=1
+                    subprocess.run(["v4l2-ctl", f"--device=/dev/video{id}", "--set-ctrl", f"exposure_absolute={exposures[expo_id]}"])
+                    cap.read()
+                    cap.read()
+                    _,testframe=cap.read()
+                    testframe=cv2.cvtColor(testframe,cv2.COLOR_BGR2GRAY)
+                    testframe_sum=np.sum(testframe)/(testframe.shape[0]*testframe.shape[1])
+                    if testframe_sum<125:
+                        if 25-testframe_sum<lastframe_sum-125:
+                            break
+                        else:
+                            expo_id+=1
+                            subprocess.run(["v4l2-ctl", f"--device=/dev/video{id}", "--set-ctrl", f"exposure_absolute={exposures[expo_id]}"])
+                            break
+                    lastframe_sum=testframe_sum
+            elif testframe_sum<=25:
+                while expo_id<len(exposures)-1:
+                    expo_id+=1
+                    subprocess.run(["v4l2-ctl", f"--device=/dev/video{id}", "--set-ctrl", f"exposure_absolute={exposures[expo_id]}"])
+                    cap.read()
+                    cap.read()
+                    _,testframe=cap.read()
+                    testframe=cv2.cvtColor(testframe,cv2.COLOR_BGR2GRAY)
+                    testframe_sum=np.sum(testframe)/(testframe.shape[0]*testframe.shape[1])
+                    if testframe_sum>25:
+                        if 25-lastframe_sum>testframe_sum-125:
+                            break
+                        else:
+                            expo_id-=1
+                            subprocess.run(["v4l2-ctl", f"--device=/dev/video{id}", "--set-ctrl", f"exposure_absolute={exposures[expo_id]}"])
+                            break
+                    lastframe_sum=testframe_sum
+            print(exposures[expo_id])
+            break
+        rate.sleep()
+
+    while True:
         if wp==c1start or wp==c2start:
-            cameraAdjust()
+            # cameraAdjust()
 
             circle_number+=1
             mapofclear={}
@@ -795,7 +841,7 @@ def main():
             break
         rate.sleep()
     
-    def getSLAMTarget(dataList):
+    def getSLAMTarget(dataList,circlr_num):
         SLAM_conf_thresh=0.7
         SLAM_target=np.zeros(3,dtype=float)
         SLAM_target_pic=np.zeros(2,dtype=float)
@@ -806,7 +852,7 @@ def main():
                     SLAM_target_pic[0]+=data.cropTensorList[i][0]
                     SLAM_target_pic[1]+=data.cropTensorList[i][1]
                 SLAM_target_pic/=4
-                with open(os.path.join(path,f'1slamlogs'),'r') as f:
+                with open(os.path.join(path,f'{circlr_num}slamlogs',f"{data.fileno}.txt"),'r') as f:
                     minDistance=10000
                     for line in f:
                         line=line.strip()
@@ -822,14 +868,14 @@ def main():
         return SLAM_target,SLAM_num
     if referenceMode==1 or referenceMode==2:
         dataList=dataList_s[referenceMode-1]
-        SLAMTarget,SLAM_num=getSLAMTarget(dataList)
+        SLAMTarget,SLAM_num=getSLAMTarget(dataList,referenceMode)
         if SLAM_num<3:
             SLAMTarget=[-1,-1,-1]
     elif referenceMode==3:
         SLAMTarget=np.zeros(3,dtype=float)
         SLAM_num=0
-        for dataList in dataList_s:
-            SLAMTarget_,SLAM_num_=getSLAMTarget(dataList)
+        for index,dataList in enumerate(dataList_s):
+            SLAMTarget_,SLAM_num_=getSLAMTarget(dataList,index+1)
             SLAMTarget+=SLAMTarget_
             SLAM_num+=SLAM_num_
         SLAMTarget/=2
@@ -920,9 +966,13 @@ def auto_rotate(img,rank,rotate_num,number,path,circle_number):
     # maskdown=np.bitwise_and(img,premaskdown)
     ROIup=img[premaskup==255]
     ROIdown=img[premaskdown==255]
-    varup=np.var(ROIup)
-    vardown=np.var(ROIdown)
-    if varup>vardown:
+    sortedUp=np.sort(ROIup)
+    sortedDown=np.sort(ROIdown)
+    up_70=sortedUp[int(sortedUp.size*0.7)]
+    down_70=sortedDown[int(sortedDown.size*0.7)]
+    # varup=np.var(ROIup)
+    # vardown=np.var(ROIdown)
+    if up_70>=down_70:
         img=cv2.rotate(img,cv2.ROTATE_180)
     h,w=img.shape[:2]
     img=img[h//3+2*h//3//8:h-2*h//3//8,w//8:w-w//8] #h//3+2*h//3//8
