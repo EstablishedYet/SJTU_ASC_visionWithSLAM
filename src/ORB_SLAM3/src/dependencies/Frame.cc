@@ -56,7 +56,7 @@ Frame::Frame(const Frame &frame)
     :mpcpi(frame.mpcpi),mpORBvocabulary(frame.mpORBvocabulary), mpORBextractorLeft(frame.mpORBextractorLeft), mpORBextractorRight(frame.mpORBextractorRight),
      mTimeStamp(frame.mTimeStamp), mK(frame.mK.clone()), mK_(Converter::toMatrix3f(frame.mK)), mDistCoef(frame.mDistCoef.clone()),
      mbf(frame.mbf), mb(frame.mb), mThDepth(frame.mThDepth), N(frame.N), mvKeys(frame.mvKeys),
-     mvKeysRight(frame.mvKeysRight), mvKeysUn(frame.mvKeysUn), mvuRight(frame.mvuRight),
+     mvKeysRight(frame.mvKeysRight), mvKeysUn(frame.mvKeysUn), mvKeysUn_nmtx(frame.mvKeysUn_nmtx),mvuRight(frame.mvuRight),
      mvDepth(frame.mvDepth), mBowVec(frame.mBowVec), mFeatVec(frame.mFeatVec),
      mDescriptors(frame.mDescriptors.clone()), mDescriptorsRight(frame.mDescriptorsRight.clone()),
      mvpMapPoints(frame.mvpMapPoints), mvbOutlier(frame.mvbOutlier), mImuCalib(frame.mImuCalib), mnCloseMPs(frame.mnCloseMPs),
@@ -774,9 +774,11 @@ void Frame::UndistortKeyPoints()
         cv::Mat nmK=cv::getOptimalNewCameraMatrix(mK, mDistCoef, frameSize, 1, frameSize);
         cv::undistortPoints(mat,nMat, mK,mDistCoef,cv::Mat(),nmK);
         nMat=nMat.reshape(1);
+        // cout<<"nmat"<<nMat<<endl;
     }
     cv::undistortPoints(mat,mat, static_cast<Pinhole*>(mpCamera)->toK(),mDistCoef,cv::Mat(),mK);
     mat=mat.reshape(1);
+    // cout<<"mat"<<mat<<endl;
 
 
     // Fill undistorted keypoint vector
@@ -787,6 +789,10 @@ void Frame::UndistortKeyPoints()
         kp.pt.x=mat.at<float>(i,0);
         kp.pt.y=mat.at<float>(i,1);
         mvKeysUn[i]=kp;
+        if(i==0)
+        {
+            cout<<mvKeysUn[i].pt.x<<endl;
+        }
     }
     if(fw!=0)
     {
@@ -797,12 +803,18 @@ void Frame::UndistortKeyPoints()
             kp.pt.x=nMat.at<float>(i,0);
             kp.pt.y=nMat.at<float>(i,1);
             mvKeysUn_nmtx[i]=kp;
+            if(i==0)
+            {
+                cout<<mvKeysUn_nmtx[i].pt.x<<endl;
+            }
         }
     }
     else
     {
         mvKeysUn_nmtx=mvKeysUn;
     }
+    cout<<mNameFile<<":"<<N<<"points first"<<endl;
+    cout<<"undistort_nmtx size"<<mvKeysUn_nmtx.size()<<endl;
 }
 
 void Frame::ComputeImageBounds(const cv::Mat &imLeft)

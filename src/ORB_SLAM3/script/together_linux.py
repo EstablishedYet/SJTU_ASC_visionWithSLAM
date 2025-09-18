@@ -378,14 +378,14 @@ def main():
     # permission_pub=rospy.Publisher("permission",Float64,queue_size=1)
     traditionalTarget_pub=rospy.Publisher("traditionalTarget",PoseStamped,queue_size=1)
 
-    pic_pub=rospy.Publisher("pic",picnameAndTime,queue_size=1) # /// reconsider the size of queue!!!
+    pic_pub=rospy.Publisher("picnameAndTime",picnameAndTime,queue_size=1) # /// reconsider the size of queue!!!
     firstLoopEnd_pub=rospy.Publisher("firstLoopEnd",Int32,queue_size=1)
     firstScout_pub=rospy.Publisher("firstScout",Int32,queue_size=1)
     secondLoopEnd_pub=rospy.Publisher("secondLoopEnd",Int32,queue_size=1)
     slamTarget_pub=rospy.Publisher("slamTarget",Point,queue_size=1)
 
     rospy.Subscriber("referenceMode",Int32,referenceMode_sub_func,queue_size=1)
-    rospy.Subscriber("permission",Int32,permission_sub_func,queue_size=1)
+    rospy.Subscriber("permission",Float64,permission_sub_func,queue_size=1)
 
     rospy.Subscriber("/mavros/mission/reached",WaypointReached, wp_reach_cb, queue_size = 1)
     rospy.Subscriber("/mavros/global_position/local", Odometry, loc_pose_callback, queue_size=1)
@@ -490,37 +490,40 @@ def main():
             # out = cv2.VideoWriter(f"/home/amov/Desktop/well{folder_name}/output{circle_number}.mp4", fourcc, 30, (1920, 1080))
             # file=open(os.path.join(path,"odom.txt"),'a')
             # lastTime_ns=-1.0
-            while True:        
-                if wp == c1end:
-                    firstLoopEnd_pub.publish(1)
-                        # print("code exit by point")
-                    break        
-                elif wp==c2end:
-                    secondLoopEnd_pub.publish(1)
-                    break
-                    # print("camera is opened")
-                success, frame = cap.read()
-                curTime_ns=time.time_ns()*1e-9
-                if success:
-                    # out.write(frame)
-                    filepath=os.path.join(outpath,f'{frameid}.jpg') #///todo change the path in slam.save()
-                    # if lastTime_ns==-1 or curTime_ns-lastTime_ns>=1/fps: ///just set the real fps of camera to the ideal number
-                    curPicnameAndTime=picnameAndTime()
-                    curPicnameAndTime.name=filepath
-                    curPicnameAndTime.time=curTime_ns
-                    # curPicnameAndTime.h=0
-                    # curPicnameAndTime.biasAngle=0
-                    pic_pub.publish(curPicnameAndTime)
-                        # lastTime_ns=curTime_ns
+            while pic_pub.get_num_connections()==0:
+                rospy.sleep(0.01)
+            with open(os.path.join(path,"odom.txt"),'a') as file:
+                while True:        
+                    if wp == c1end:
+                        firstLoopEnd_pub.publish(1)
+                            # print("code exit by point")
+                        break        
+                    elif wp==c2end:
+                        secondLoopEnd_pub.publish(1)
+                        break
+                        # print("camera is opened")
+                    success, frame = cap.read()
+                    curTime_ns=time.time_ns()*1e-9
+                    if success:
+                        # out.write(frame)
+                        filepath=os.path.join(outpath,f'{frameid}.jpg') #///todo change the path in slam.save()
+                        # if lastTime_ns==-1 or curTime_ns-lastTime_ns>=1/fps: ///just set the real fps of camera to the ideal number
+                        curPicnameAndTime=picnameAndTime()
+                        curPicnameAndTime.name=filepath
+                        curPicnameAndTime.time=curTime_ns
+                        # curPicnameAndTime.h=0
+                        # curPicnameAndTime.biasAngle=0
+                        pic_pub.publish(curPicnameAndTime)
+                            # lastTime_ns=curTime_ns
 
-                    cv2.imwrite(filepath,frame)
-                    
-                    allimgdata = pos.Imgdata(pos=[local_x, local_y, local_z],  num=-1, 
-                                            yaw=local_yaw, cropTensorList=[(0,0),(0,0),(0,0),(0,0)],
-                                            speed=[local_vel_x, local_vel_y, local_vel_z],fileno=frameid)
-                    alldataList.append(allimgdata)
-                    frameid+=1
-                    with open(os.path.join(path,"odom.txt"),'a') as file:
+                        cv2.imwrite(filepath,frame)
+                        
+                        allimgdata = pos.Imgdata(pos=[local_x, local_y, local_z],  num=-1, 
+                                                yaw=local_yaw, cropTensorList=[(0,0),(0,0),(0,0),(0,0)],
+                                                speed=[local_vel_x, local_vel_y, local_vel_z],fileno=frameid)
+                        alldataList.append(allimgdata)
+                        frameid+=1
+                        
                         file.write("global: "+str(local_x)+' '+str(local_y)+' '+str(local_z)+' '+str(local_vel_x)+' '+str(local_vel_y)+' '+str(local_vel_z)+' '+str(local_yaw)+'\n')
                         file.write("local: "+str(odom_x)+' '+str(odom_y)+' '+str(odom_z)+' '+str(odom_vel_x)+' '+str(odom_vel_y)+' '+str(odom_vel_z)+' '+str(odom_yaw)+'\n')
                         # if cv2.waitKey(1) & 0xFF == ord('q'):

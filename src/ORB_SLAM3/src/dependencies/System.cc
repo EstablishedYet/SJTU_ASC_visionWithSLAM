@@ -1623,6 +1623,7 @@ void System::SaveFrame(int circle)
             filename.replace(pos,3,"txt");
             pos=filename.rfind("frames");
             filename.replace(pos,6,"slamlogs");
+            cout<<filename<<endl;
             ofstream f(filename);
             // f.open(filename);
             for(map<MapPoint*,Coordinate>::const_iterator nit=it->second.begin(),nend=it->second.end();nit!=nend;++nit)

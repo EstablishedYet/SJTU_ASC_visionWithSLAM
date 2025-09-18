@@ -378,14 +378,14 @@ def main():
     # permission_pub=rospy.Publisher("permission",Float64,queue_size=1)
     traditionalTarget_pub=rospy.Publisher("traditionalTarget",PoseStamped,queue_size=1)
 
-    pic_pub=rospy.Publisher("pic",picnameAndTime,queue_size=1) # /// reconsider the size of queue!!!
+    pic_pub=rospy.Publisher("picnameAndTime",picnameAndTime,queue_size=1) # /// reconsider the size of queue!!!
     firstLoopEnd_pub=rospy.Publisher("firstLoopEnd",Int32,queue_size=1)
     firstScout_pub=rospy.Publisher("firstScout",Int32,queue_size=1)
     secondLoopEnd_pub=rospy.Publisher("secondLoopEnd",Int32,queue_size=1)
     slamTarget_pub=rospy.Publisher("slamTarget",Point,queue_size=1)
 
     rospy.Subscriber("referenceMode",Int32,referenceMode_sub_func,queue_size=1)
-    rospy.Subscriber("permission",Int32,permission_sub_func,queue_size=1)
+    rospy.Subscriber("permission",Float64,permission_sub_func,queue_size=1)
 
     rospy.Subscriber("/mavros/mission/reached",WaypointReached, wp_reach_cb, queue_size = 1)
     rospy.Subscriber("/mavros/global_position/local", Odometry, loc_pose_callback, queue_size=1)
@@ -491,6 +491,9 @@ def main():
             # out = cv2.VideoWriter(f"/home/amov/Desktop/well{folder_name}/output{circle_number}.mp4", fourcc, 30, (1920, 1080))
             # file=open(os.path.join(path,"odom.txt"),'a')
             # lastTime_ns=-1.0
+            while pic_pub.get_num_connections()==0:
+                rospy.sleep(0.01)
+            # print(pic_pub.get_num_connections(),"sub,end")
             with open(os.path.join(path,"odom.txt"),'a') as file:
                 while True:        
                     if wp == c1end:

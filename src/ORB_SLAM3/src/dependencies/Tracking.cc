@@ -548,6 +548,7 @@ void Tracking::storeFrame(Frame &frame)
             if(frame.mvpMapPoints[i])
                 innerMap[frame.mvpMapPoints[i]]=Coordinate(frame.mvKeysUn_nmtx[i].pt.x,frame.mvKeysUn_nmtx[i].pt.y);
         }
+        cout<<"storframe"<<frame.mNameFile<<":"<<frame.N<<"points second"<<endl;
     }
 }
 
@@ -567,6 +568,8 @@ void Tracking::storeKeyFrame(KeyFrame *frame)
             if(frame->mvpMapPoints[i])
                 innerMap[frame->mvpMapPoints[i]]=Coordinate(frame->mvKeysUn_nmtx[i].pt.x,frame->mvKeysUn_nmtx[i].pt.y);
         }
+        cout<<"size"<<frame->mvKeysUn_nmtx.size()<<endl;
+        cout<<"storekeyframe"<<frame->mNameFile<<":"<<frame->N<<"points second"<<endl;
     }
 }
 
@@ -1928,6 +1931,7 @@ void Tracking::Track(bool createNewDelay,bool gap)
     if(mState==NO_IMAGES_YET)
     {
         mState = NOT_INITIALIZED;
+        std::cout<<"set to not_init"<<std::endl;
     }
 
     mLastProcessedState=mState;
@@ -2558,6 +2562,7 @@ void Tracking::MonocularInitialization()
 
     if(!mbReadyToInitializate)
     {
+        std::cout<<"not ready"<<mCurrentFrame.mvKeys.size()<<' '<<mCurrentFrame.mNameFile<<std::endl;
         // Set Reference Frame
         if(mCurrentFrame.mvKeys.size()>100)
         {
@@ -2588,21 +2593,23 @@ void Tracking::MonocularInitialization()
     }
     else
     {
+        std::cout<<"ready"<<mCurrentFrame.mvKeys.size()<<' '<<mCurrentFrame.mNameFile<<std::endl;
         if (((int)mCurrentFrame.mvKeys.size()<=100)||((mSensor == System::IMU_MONOCULAR)&&(mLastFrame.mTimeStamp-mInitialFrame.mTimeStamp>1.0)))
         {
             mbReadyToInitializate = false;
-
+            std::cout<<"abort 1"<<std::endl;
             return;
         }
 
         // Find correspondences
         ORBmatcher matcher(0.9,true);
-        int nmatches = matcher.SearchForInitialization(mInitialFrame,mCurrentFrame,mvbPrevMatched,mvIniMatches,100);
-
+        int nmatches = matcher.SearchForInitialization(mInitialFrame,mCurrentFrame,mvbPrevMatched,mvIniMatches,400);
+        std::cout<<nmatches<<"matches"<<std::endl;
         // Check if there are enough correspondences
         if(nmatches<100)
         {
             mbReadyToInitializate = false;
+            std::cout<<"abort 2"<<std::endl;
             return;
         }
 

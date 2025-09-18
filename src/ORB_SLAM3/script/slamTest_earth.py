@@ -106,35 +106,35 @@ def main():
     # cameraAdjust()
 
     parser=argparse.ArgumentParser()
-    parser.add_argument('--mode',type=str)
+    parser.add_argument('--move',type=int)
     # parser.add_argument('--retinex',type=int,default=1)
-    parser.add_argument('--clear',type=int,default=0)
-    parser.add_argument('--c1start',type=int,default=7)
-    parser.add_argument('--c1end',type=int,default=8)
-    parser.add_argument('--c2start',type=int,default=13)
-    parser.add_argument('--c2end',type=int,default=14)
-    parser.add_argument('--numOfFrame',type=int,default=18)
-    parser.add_argument('--numOfCircle',type=int,default=2)
-    parser.add_argument('--numOfProcs',type=int,default=6)
+    # parser.add_argument('--clear',type=int,default=0)
+    # parser.add_argument('--c1start',type=int,default=7)
+    # # parser.add_argument('--c1end',type=int,default=8)
+    # parser.add_argument('--c2start',type=int,default=13)
+    # parser.add_argument('--c2end',type=int,default=14)
+    # parser.add_argument('--numOfFrame',type=int,default=18)
+    # parser.add_argument('--numOfCircle',type=int,default=2)
+    # parser.add_argument('--numOfProcs',type=int,default=6)
     # parser.add_argument('--camera',type=str)
-    parser.add_argument('--checkpoint',type=int,default=3)
+    # parser.add_argument('--checkpoint',type=int,default=3)
     arg=parser.parse_args()
-    
-    mode=arg.mode
+    needtomove=arg.move
+    # mode=arg.mode
     # retinex=arg.retinex
-    clear=arg.clear
-    c1start=arg.c1start
-    c1end=arg.c1end
-    c2start=arg.c2start
-    c2end=arg.c2end
-    numOfFrame=arg.numOfFrame
-    numOfProcs=arg.numOfProcs
-    numOfCircle=arg.numOfCircle
-    # cameraType=arg.camera
-    # expo=arg.expo
-    checkpoint=arg.checkpoint
-    if numOfCircle==1:
-        c2end=c2start=-1
+    # clear=arg.clear
+    # c1start=arg.c1start
+    # c1end=arg.c1end
+    # c2start=arg.c2start
+    # c2end=arg.c2end
+    # numOfFrame=arg.numOfFrame
+    # numOfProcs=arg.numOfProcs
+    # numOfCircle=arg.numOfCircle
+    # # cameraType=arg.camera
+    # # expo=arg.expo
+    # checkpoint=arg.checkpoint
+    # if numOfCircle==1:
+        # c2end=c2start=-1
 
     modelclassify_number=r"/home/amov/sjtu_asc_v2_ws-main/src/mission_offboard/script/models/902detect.pt"
     modelclassify_pattern=r"/home/amov/sjtu_asc_v2_ws-main/src/mission_offboard/script/models/902classify.pt"
@@ -144,7 +144,7 @@ def main():
 
     conf_thresh=0.7
 
-    circle_number=2-numOfCircle
+    # circle_number=2-numOfCircle
 
     local_x = 0
     local_y = 0
@@ -186,20 +186,20 @@ def main():
     nmtx, _ = cv2.getOptimalNewCameraMatrix(mtx, dist, (fw,fh), alpha=1)
     exposures=[1,4,8,15,30,50,90]
 
-    if mode=="number":
-        MODELCLASSIFY = modelclassify_number
-    elif mode=="pattern":
-        MODELCLASSIFY = modelclassify_pattern
-    # elif mode=="number_old":
-    #     MODELCLASSIFY = modelclassify_number_old
-    else:
-        raise ValueError("Wrong mode! Please input 'number' or 'pattern'!")
+    # if mode=="number":
+    #     MODELCLASSIFY = modelclassify_number
+    # elif mode=="pattern":
+    #     MODELCLASSIFY = modelclassify_pattern
+    # # elif mode=="number_old":
+    # #     MODELCLASSIFY = modelclassify_number_old
+    # else:
+    #     raise ValueError("Wrong mode! Please input 'number' or 'pattern'!")
 
     MODELOBB = r"/home/amov/sjtu_asc_v2_ws-main/src/mission_offboard/script/models/18_obb.pt"
     # print("loading obb model")
-    modelObb = YOLO(MODELOBB)  # 通常是pt模型的文件
+    # modelObb = YOLO(MODELOBB)  # 通常是pt模型的文件
     # print("loading classify model")
-    modelClassify = YOLO(MODELCLASSIFY)
+    # modelClassify = YOLO(MODELCLASSIFY)
 
     pattern_dic={0:0,1:1,2:10,3:11}
     dic_append={}
@@ -226,92 +226,92 @@ def main():
                     max_val = num
         return max_val
 
-    source=r"/home/amov/sjtu_asc_v2_ws-main/log_shi" 
-    os.makedirs(source,exist_ok=True)
-    path=os.path.join(source,str(find_max_numeric_folder(source)+1))
-    os.makedirs(path,exist_ok=True)
+    # source=r"/home/amov/sjtu_asc_v2_ws-main/log_shi" 
+    # os.makedirs(source,exist_ok=True)
+    # path=os.path.join(source,str(find_max_numeric_folder(source)+1))
+    # os.makedirs(path,exist_ok=True)
     # outpath=os.path.join(path,'frames')
     # os.makedirs(outpath,exist_ok=True)
 
-    console=open(os.path.join(path,'console.txt'),'a')
-    sys.stdout=console
-    sys.stderr=console
+    # console=open(os.path.join(path,'console.txt'),'a')
+    # sys.stdout=console
+    # sys.stderr=console
 
-    def obb_predict(inputpath):
-        results_obb = modelObb.predict(
-            source=inputpath,
-            imgsz=1280,  # 此处可以调节
-            half=True,
-            iou=0.4,
-            conf=0.5,
-            device='0',  # '0'使用GPU运行
-            max_det=maxdet,
-            save=False,
-            project=path,
-            # workers=4,
-            batch=10
-            # classes=red
-            # augment = True
-        )
-        return results_obb
+    # def obb_predict(inputpath):
+    #     results_obb = modelObb.predict(
+    #         source=inputpath,
+    #         imgsz=1280,  # 此处可以调节
+    #         half=True,
+    #         iou=0.4,
+    #         conf=0.5,
+    #         device='0',  # '0'使用GPU运行
+    #         max_det=maxdet,
+    #         save=False,
+    #         project=path,
+    #         # workers=4,
+    #         batch=10
+    #         # classes=red
+    #         # augment = True
+    #     )
+    #     return results_obb
 
-    def most_common_numbers(all_numbers):
-        # 使用Counter计算每个字符串的出现次数
-        count = Counter(all_numbers)
-        most_common = count.most_common(max_num)
-        return most_common
+    # def most_common_numbers(all_numbers):
+    #     # 使用Counter计算每个字符串的出现次数
+    #     count = Counter(all_numbers)
+    #     most_common = count.most_common(max_num)
+    #     return most_common
 
-    def get_ideal(list):
-        newlist=sorted(list)
-        if mode=="number":
-            return newlist[1]
-        else:
-            return newlist[2]
+    # def get_ideal(list):
+    #     newlist=sorted(list)
+    #     if mode=="number":
+    #         return newlist[1]
+    #     else:
+    #         return newlist[2]
         
-    def guess_ideal(list):
-        newlist=sorted(list)
-        return newlist[-1]
+    # def guess_ideal(list):
+    #     newlist=sorted(list)
+    #     return newlist[-1]
         
-    def coordinate_change(rank,height=25, pos_=[0, 0, 25], yaw=0.00000000, cropTensorList=[[0, 0], [0, 0], [0, 0], [0, 0]],
-                        speed=[0, 0, 0], ):
+    # def coordinate_change(rank,height=25, pos_=[0, 0, 25], yaw=0.00000000, cropTensorList=[[0, 0], [0, 0], [0, 0], [0, 0]],
+    #                     speed=[0, 0, 0], ):
         
-        well_width = (cropTensorList[0][0] + cropTensorList[2][0]) / 2
-        well_height = (cropTensorList[0][1] + cropTensorList[2][1]) / 2
+    #     well_width = (cropTensorList[0][0] + cropTensorList[2][0]) / 2
+    #     well_height = (cropTensorList[0][1] + cropTensorList[2][1]) / 2
 
-        # 通过ros获取飞行的高度以及X与Y的值  此处默认设置为20
-        X0 = pos_[0]
-        Y0 = pos_[1]
-        Z0 = pos_[2]
+    #     # 通过ros获取飞行的高度以及X与Y的值  此处默认设置为20
+    #     X0 = pos_[0]
+    #     Y0 = pos_[1]
+    #     Z0 = pos_[2]
 
-        x = ((well_width - nmtx[0][2]) / nmtx[0][0]) * Z0
-        y = ((nmtx[1][2] - well_height) / nmtx[1][1]) * Z0
+    #     x = ((well_width - nmtx[0][2]) / nmtx[0][0]) * Z0
+    #     y = ((nmtx[1][2] - well_height) / nmtx[1][1]) * Z0
 
-        x_ = x * np.sin(yaw) + y * np.cos(yaw)
-        y_ = y * np.sin(yaw) - x * np.cos(yaw)
-        # current_speed = math.pow(speed[0] * speed[0] + speed[1] * speed[1], 0.5)
-        # delt = current_speed * 1.15#12.5# current_speed * 1.08288
+    #     x_ = x * np.sin(yaw) + y * np.cos(yaw)
+    #     y_ = y * np.sin(yaw) - x * np.cos(yaw)
+    #     # current_speed = math.pow(speed[0] * speed[0] + speed[1] * speed[1], 0.5)
+    #     # delt = current_speed * 1.15#12.5# current_speed * 1.08288
 
-        # savepath=os.path.join(path,f'output{rank}.txt')
-        # with open(savepath, 'a') as file:
-        #     file.write("yaw is: " + str(yaw) + " ")
-        #     file.write("pose is: " + str(pos_[0]) + " " + str(pos_[1]) + " " + str(pos_[2]) + " ")
-        #     file.write("target is: " + str(well_width) + " " + str(well_height) + " ")
-        #     file.write("speed is:" + str(speed[0]) + " " + str(speed[1]) + " " + str(speed[2]) + "\n")
-        result_ = [x_ + X0, y_ + Y0 , 0]
+    #     # savepath=os.path.join(path,f'output{rank}.txt')
+    #     # with open(savepath, 'a') as file:
+    #     #     file.write("yaw is: " + str(yaw) + " ")
+    #     #     file.write("pose is: " + str(pos_[0]) + " " + str(pos_[1]) + " " + str(pos_[2]) + " ")
+    #     #     file.write("target is: " + str(well_width) + " " + str(well_height) + " ")
+    #     #     file.write("speed is:" + str(speed[0]) + " " + str(speed[1]) + " " + str(speed[2]) + "\n")
+    #     result_ = [x_ + X0, y_ + Y0 , 0]
 
-        return np.array(result_)
+    #     return np.array(result_)
 
-    def common_checked(common_trusted_num_list,allnum):
-        if len(common_trusted_num_list)<3:
-            return False
-        else:
-            threshold=1/8   
-            def ratio_check():
-                for i in range(3):
-                    if common_trusted_num_list[i][1]/allnum<threshold:
-                        return False
-                return True
-            return ratio_check()
+    # def common_checked(common_trusted_num_list,allnum):
+    #     if len(common_trusted_num_list)<3:
+    #         return False
+    #     else:
+    #         threshold=1/8   
+    #         def ratio_check():
+    #             for i in range(3):
+    #                 if common_trusted_num_list[i][1]/allnum<threshold:
+    #                     return False
+    #             return True
+    #         return ratio_check()
         
     def loc_pose_callback(msg):
         nonlocal local_x, local_y, local_z, local_yaw, local_vel_x, local_vel_y, local_vel_z
@@ -378,31 +378,67 @@ def main():
     # permission_pub=rospy.Publisher("permission",Float64,queue_size=1)
     traditionalTarget_pub=rospy.Publisher("traditionalTarget",PoseStamped,queue_size=1)
 
-    pic_pub=rospy.Publisher("pic",picnameAndTime,queue_size=1) # /// reconsider the size of queue!!!
+    pic_pub=rospy.Publisher("picnameAndTime",picnameAndTime,queue_size=100,latch=True) # /// reconsider the size of queue!!!
     firstLoopEnd_pub=rospy.Publisher("firstLoopEnd",Int32,queue_size=1)
     firstScout_pub=rospy.Publisher("firstScout",Int32,queue_size=1)
     secondLoopEnd_pub=rospy.Publisher("secondLoopEnd",Int32,queue_size=1)
     slamTarget_pub=rospy.Publisher("slamTarget",Point,queue_size=1)
-
+    accepttest_pub=rospy.Publisher('test',Int32,queue_size=1)
+    accepttest_pub.publish(1)
     rospy.Subscriber("referenceMode",Int32,referenceMode_sub_func,queue_size=1)
-    rospy.Subscriber("permission",Int32,permission_sub_func,queue_size=1)
+    # rospy.Subscriber("permission",,permission_sub_func,queue_size=1)
 
     rospy.Subscriber("/mavros/mission/reached",WaypointReached, wp_reach_cb, queue_size = 1)
     rospy.Subscriber("/mavros/global_position/local", Odometry, loc_pose_callback, queue_size=1)
     rospy.Subscriber("/mavros/gpsstatus/gps_status",NavSatStatus,status_cb,queue_size=1)
     rospy.Subscriber("/mavros/local_position/odom",Odometry,odom_cb,queue_size=1)
-    path=""
-    ideal_num=NaN
-    ideal_log=''
-    outputlogpath=''
+    path="/home/established/6"
+    framepath=os.path.join(path,"2frames")
+    os.makedirs(framepath,exist_ok=True)
+    if needtomove:
+        needtomovefrom=os.path.join(path,"2clearframes")
+        
+        framelist=os.listdir(framepath)
+        # if len(framelist)==0:
+        startid=0
+        movesourcelist=os.listdir(needtomovefrom)
+        movesourcelist=sorted(movesourcelist,key=lambda x:int(os.path.splitext(x)[0]))
+        for file in movesourcelist:
+            while True:
+                if f"{startid}.jpg" in framelist:
+                    startid+=1
+                else:
+                    shutil.copy(os.path.join(needtomovefrom,file),os.path.join(framepath,f"{startid}.jpg"))
+                    framelist.append(f"{startid}.jpg")
+                    startid+=1
+                    break
+    # framelist=sorted(framelist,lambda x:int(os.path.splitext(x)[0]))
+    ideal_num=43
+    ideal_log=os.path.join(path,f"{ideal_num}.txt")
+    outputlogpath=os.path.join(path,"output.txt")
+    os.makedirs(os.path.join(path,"2slamlogs"),exist_ok=True)
     curtime=0
-    for i in os.listdir(path):
+    rate.sleep()
+    while pic_pub.get_num_connections()==0:
+        rospy.sleep(0.01)
+    print(pic_pub.get_num_connections(),"sub,end")
+    filelist=os.listdir(framepath)
+    filelist=sorted(filelist,key=lambda x:int(os.path.splitext(x)[0]))
+    # curPicnameAndTime=picnameAndTime()
+    # curPicnameAndTime.name='test'
+    # curPicnameAndTime.time=-1
+    # pic_pub.publish(curPicnameAndTime)
+    # time.sleep(1)
+    for i in filelist:
         curPicnameAndTime=picnameAndTime()
-        curPicnameAndTime.name=os.path.join(path,i)
+        curPicnameAndTime.name=os.path.join(framepath,i)
         curPicnameAndTime.time=curtime
-        curtime+=0.1
         pic_pub.publish(curPicnameAndTime)
-        rate.sleep()
+        print(curtime)
+        curtime+=0.1
+        time.sleep(0.1)
+        # break
+    # time.sleep(5)
     firstLoopEnd_pub.publish(1)
     while True:
         if referenceMode!=-1:
@@ -441,8 +477,8 @@ def main():
                     file=tokens[5]
                     if num==ideal_num and conf>=SLAM_conf_thresh:
                         for i in range(4):
-                            SLAM_target_pic[0]+=coordinates[file][0]
-                            SLAM_target_pic[1]+=coordinates[file][1]
+                            SLAM_target_pic[0]+=coordinates[file][i][0]
+                            SLAM_target_pic[1]+=coordinates[file][i][1]
                         SLAM_target_pic/=4
                         with open(os.path.join(path,f'{circlr_num}slamlogs',f"{file.split('/')[-1].split('.')[0].split('_')[0]}.txt"),'r') as f:
                             minDistance=10000
@@ -461,3 +497,5 @@ def main():
     if referenceMode!=0:
         target,num=getSLAMTarget(outputlogpath,2)
         print(target,num)
+
+main()

@@ -49,13 +49,16 @@ queue<double> timeQ;
 // queue<float> biasAngleQ;
 int firstLoopEndFlag=0,firstScoutFlag=-1,secondLoopFlag=0,secondLoopEndFlag=0,wayPoint=0;
 int a=0;
+int test=-1;
 geometry_msgs::Point slamTarget;
 geometry_msgs::PoseStamped traditionalTarget;
 float global_x,global_y,global_z,global_yaw;
 
 void pic_sub_func(const picname_and_time_msgs::picnameAndTime::ConstPtr &picInfo)
 {
+    // cout<<"writing"<<endl;
     unique_lock<mutex> lock(queue_mtx);
+    // cout<<"get"<<picInfo->name<<endl;
     nameQ.push(picInfo->name);
     timeQ.push(picInfo->time);
     // float h=picInfo->h;
@@ -116,22 +119,27 @@ void globalPosition_sub_func(const nav_msgs::Odometry::ConstPtr &globalPosition_
     global_yaw=yaw;
 }
 
+void test_sub_func(const std_msgs::Int32::ConstPtr &test_info)
+{
+    test=test_info->data;
+}
+
 int main(int argc,char **argv)
 {
     /// ./summer2025 path/to/voc path/to/setting wayPointStartToTrackForBombing
-    string bombPoint=argv[3];
+    // string bombPoint=argv[3];
     // int l=bombPoint.length();
     // int bombPoint_int=0;
     // for(int i=0;i<l;++i)
     // {
     //     bombPoint_int+=(bombPoint[0]-'0')*pow(10,l-1-i);
     // }
-    int bombPoint_int=stoi(bombPoint);
+    // int bombPoint_int=stoi(bombPoint);
     ros::init(argc, argv, "slam");
     ros::NodeHandle nh;
-    ros::Rate rate1(30);
+    ros::Rate rate1(20);
     // ros::Rate rate2(30);
-    ros::Subscriber pic_sub=nh.subscribe<picname_and_time_msgs::picnameAndTime>("picnameAndTime",1,pic_sub_func);
+    ros::Subscriber pic_sub=nh.subscribe<picname_and_time_msgs::picnameAndTime>("picnameAndTime",100,pic_sub_func);
     ros::Subscriber firstLoopEnd_sub=nh.subscribe<std_msgs::Int32>("firstLoopEnd",1,firstLoopEnd_sub_func);
     ros::Subscriber firstScout_sub=nh.subscribe<std_msgs::Int32>("firstScout",1,firstScout_sub_func);
     ros::Subscriber secondLoopEnd_sub=nh.subscribe<std_msgs::Int32>("secondLoopEnd",1,secondLoopEnd_sub_func);
@@ -139,6 +147,7 @@ int main(int argc,char **argv)
     ros::Subscriber traditionalTarget_sub=nh.subscribe<geometry_msgs::PoseStamped>("traditionalTarget",1,traditionalTarget_sub_func);
     ros::Subscriber wayPoint_sub=nh.subscribe<mavros_msgs::WaypointReached>("/mavros/mission/reached", 1, wayPoint_sub_func);
     ros::Subscriber globalPosition_sub=nh.subscribe<nav_msgs::Odometry>("/mavros/global_position/local", 1, globalPosition_sub_func);
+    ros::Subscriber test_sub=nh.subscribe<std_msgs::Int32>("test",1,test_sub_func);
     // ros::Publisher firstTrack_pub=nh.advertise<std_msgs::Int32>("firstTrack",1)
     ros::Publisher referenceMode_pub=nh.advertise<std_msgs::Int32>("referenceMode",1);
     // ros::Publisher distance_pub=nh.advertise<std_msgs::Float32>("distance",1);
@@ -148,13 +157,14 @@ int main(int argc,char **argv)
     ros::AsyncSpinner spinner(1);
     spinner.start();
 
-    ORB_SLAM3::System SLAM(argv[1],argv[2],ORB_SLAM3::System::MONOCULAR, false);
+    ORB_SLAM3::System SLAM(argv[1],argv[2],ORB_SLAM3::System::MONOCULAR, true);
     string curName;
     double curTime;
     int flag=0; //set flag as int because it's recerved from ros
     bool resetActiveMapFlag=false;
     double t0=-1;
     bool emptyFlag=true;
+    // cout<<test<<'t'<<endl;
     while(!flag||!emptyFlag)
     {
         if(!emptyFlag)
@@ -165,23 +175,32 @@ int main(int argc,char **argv)
                 curTime=timeQ.front();//此time应以秒计
                 nameQ.pop();
                 timeQ.pop();
+                cout<<curName<<endl;
             }
-            if(t0==-1)
+            if(curTime!=-1)
             {
-                t0=curTime;
+                if(t0==-1)
+                {
+                    t0=curTime;
+                }
+                SLAM.TrackMonocular(cv::imread(curName,cv::IMREAD_GRAYSCALE),curTime,vector<ORB_SLAM3::IMU::Point>(),curName,true);
+                cout<<SLAM.GetTrackingState()<<endl;
+                if(SLAM.GetTrackingState()==1&&curTime-t0>=3)
+                {
+                    SLAM.ResetActiveMap();
+                    resetActiveMapFlag=true;
+                    break;
+                }
+                //先判断有没有initialized，若在3s内未完成，视同lost，若完成，才判断后续有无lost
+                if(SLAM.isLost())///若第一次lost且keyframe过少，应舍去，否则保留，还要注意修改relocalizemonocular中相关逻辑，因为涉及reset
+                {
+                    resetActiveMapFlag=SLAM.getResetActiveMapFlag();
+                    break;
+                }
             }
-            SLAM.TrackMonocular(cv::imread(curName,cv::IMREAD_GRAYSCALE),curTime,vector<ORB_SLAM3::IMU::Point>(),curName,true);
-            if(SLAM.GetTrackingState()==1&&curTime-t0>=3)
+            else
             {
-                SLAM.ResetActiveMap();
-                resetActiveMapFlag=true;
-                break;
-            }
-            //先判断有没有initialized，若在3s内未完成，视同lost，若完成，才判断后续有无lost
-            if(SLAM.isLost())///若第一次lost且keyframe过少，应舍去，否则保留，还要注意修改relocalizemonocular中相关逻辑，因为涉及reset
-            {
-                resetActiveMapFlag=SLAM.getResetActiveMapFlag();
-                break;
+                cout<<"received test"<<endl;
             }
         }
         {
@@ -191,6 +210,7 @@ int main(int argc,char **argv)
         {
             unique_lock<mutex> lock(queue_mtx);
             emptyFlag=nameQ.empty();
+            // cout<<emptyFlag<<endl;
         }
         // ros::spinOnce();
         rate1.sleep();
@@ -198,6 +218,7 @@ int main(int argc,char **argv)
     // std_msgs::Int32 firstTrackFlag;
     // firstTrackFlag=int (!(SLAM.isLost()));//不用发出了，直接接受关于confidence high/low的值，本地判断
     // firstTrack_pub.publish(firstTrackFlag);
+    // resetActiveMapFlag=true;
     if(!resetActiveMapFlag)
     {
         SLAM.SaveFrame(1);

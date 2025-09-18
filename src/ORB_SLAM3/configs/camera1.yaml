@@ -22,10 +22,10 @@ loopClosing: 0
 Camera.type: "PinHole"
 
 # Camera calibration and distortion parameters (OpenCV) 
-Camera1.fx: 2820.3
-Camera1.fy: 2837.5
-Camera1.cx: 1267
-Camera1.cy: 612
+Camera1.fx: 2872.4
+Camera1.fy: 2865.7
+Camera1.cx: 1234.2
+Camera1.cy: 689.1
 
 Camera1.k1: -0.52
 Camera1.k2: 0.7131
@@ -40,10 +40,10 @@ Camera.height: 1440
 # Camera.newHeight: 350
 
 # Camera frames per second 
-Camera.fps: 15
+Camera.fps: 10
 
 # Color order of the images (0: BGR, 1: RGB. It is ignored if images are grayscale)
-# Camera.RGB: 1
+Camera.RGB: 1
 
 #--------------------------------------------------------------------------------------------
 # ORB Parameters
@@ -63,7 +63,7 @@ ORBextractor.nLevels: 8
 # Firstly we impose iniThFAST. If no corners are detected we impose a lower value minThFAST
 # You can lower these values if your images have low contrast			
 ORBextractor.iniThFAST: 20
-ORBextractor.minThFAST: 7
+ORBextractor.minThFAST: 10
 
 #--------------------------------------------------------------------------------------------
 # Viewer Parameters
